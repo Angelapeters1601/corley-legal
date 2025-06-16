@@ -12,7 +12,7 @@ import Login from './pages/Login';
 export default function App() {
   return (
     <div className="min-h-screen flex flex-col">
-      <Router>
+      <Router basename="/corley-legal">
         <Routes>
           <Route element={<AppLayout />}>
             <Route path="/" element={<Home />} />
