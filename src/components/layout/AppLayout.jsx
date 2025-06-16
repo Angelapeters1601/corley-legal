@@ -1,9 +1,9 @@
 import { Outlet } from 'react-router-dom';
 import React from 'react';
-import Nav from './Nav';
+import Nav from './Nav.jsx';
 import Footer from './Footer';
 
-export default function AppLayout() {
+function AppLayout() {
   return (
     <div className="min-h-screen flex flex-col">
       <Nav />
@@ -14,3 +14,5 @@ export default function AppLayout() {
     </div>
   );
 }
+
+export default AppLayout;

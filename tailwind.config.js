@@ -4,8 +4,8 @@ export default {
   theme: {
     extend: {
       colors: {
-        blue: '#7889D6',
-        pink: '#FF66C4',
+        customblue: '#7889D6',
+        custompink: '#FF66C4',
       },
     },
   },

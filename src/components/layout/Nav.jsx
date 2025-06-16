@@ -1,10 +1,13 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import React, { useState, useEffect, useRef } from 'react';
 import { FiMenu, FiX } from 'react-icons/fi';
 
 export default function Nav() {
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [criminalLawOpen, setCriminalLawOpen] = useState(false);
+  const [mobileOpenDropdown, setMobileOpenDropdown] = useState(null);
   const navRef = useRef(null);
 
   // Close dropdowns when clicking outside
@@ -12,6 +15,7 @@ export default function Nav() {
     const handleClickOutside = (event) => {
       if (navRef.current && !navRef.current.contains(event.target)) {
         setActiveDropdown(null);
+        setCriminalLawOpen(false);
       }
     };
 
@@ -19,12 +23,24 @@ export default function Nav() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Criminal Law sub-items
+  const criminalLawItems = [
+    { name: 'Drug Offenses', to: '/practice-areas/drug-offenses' },
+    { name: 'DUI/DWI', to: '/practice-areas/dui-dwi' },
+    { name: 'Assault Charges', to: '/practice-areas/assault' },
+    { name: 'Theft Crimes', to: '/practice-areas/theft' },
+    { name: 'White Collar Crimes', to: '/practice-areas/white-collar' },
+    { name: 'Domestic Violence', to: '/practice-areas/domestic-violence' },
+    { name: 'Juvenile Crimes', to: '/practice-areas/juvenile' },
+    { name: 'Expungement', to: '/practice-areas/expungement' },
+  ];
+
+  const handleMobileDropdown = (label) => {
+    setMobileOpenDropdown(mobileOpenDropdown === label ? null : label);
+  };
+
   return (
-    <nav
-      ref={navRef}
-      className="bg-black/80 backdrop-blur-md fixed py-5
-      top-0 w-full z-50 shadow-lg border-b p-5order-gray-800"
-    >
+    <nav ref={navRef} className="bg-black py-8 top-0 w-full z-50 shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -33,185 +49,279 @@ export default function Nav() {
               <img
                 src={`${import.meta.env.BASE_URL}CIPS_Logo.png`}
                 alt="Company Logo"
-                className="h-20 w-30"
+                className="h-20 w-auto"
               />
             </Link>
           </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:block">
-            <div className="ml-10 flex items-center space-x-8">
-              <NavLink label="Home" to="/" />
+            <div className="ml-10 flex items-center space-x-1">
+              <NavLink
+                label="Home"
+                to="/"
+                isActive={location.pathname === '/'}
+              />
+
               <Dropdown
                 label="Team"
                 isActive={activeDropdown === 'Team'}
-                onClick={() =>
-                  setActiveDropdown(activeDropdown === 'Team' ? null : 'Team')
-                }
+                onMouseEnter={() => setActiveDropdown('Team')}
+                onMouseLeave={() => setActiveDropdown(null)}
                 items={[
-                  { name: 'Members', to: '/team#members' },
-                  { name: 'Leadership', to: '/team#leadership' },
+                  { name: 'John Doe', to: '/team#JohnDoe' },
+                  { name: 'Corley Yisreal', to: '/team#CorleyYisreal' },
+                  { name: 'Sarah Parker', to: '/team#SarahParker' },
                 ]}
               />
-              <Dropdown
-                label="Practice Area"
-                isActive={activeDropdown === 'Practice Area'}
-                onClick={() =>
-                  setActiveDropdown(
-                    activeDropdown === 'Practice Area' ? null : 'Practice Area'
-                  )
-                }
-                items={[
-                  { name: 'Corporate', to: '/practice-areas#corporate' },
-                  { name: 'Family', to: '/practice-areas#family' },
-                ]}
-              />
+
+              <div
+                className="relative"
+                onMouseEnter={() => setActiveDropdown('Practice Areas')}
+                onMouseLeave={() => {
+                  setActiveDropdown(null);
+                  setCriminalLawOpen(false);
+                }}
+              >
+                <Dropdown
+                  label="Practice Areas"
+                  isActive={activeDropdown === 'Practice Areas'}
+                  onClick={() => {}}
+                  items={[
+                    {
+                      name: 'Criminal Law',
+                      to: '#',
+                      onMouseEnter: (e) => {
+                        e.preventDefault();
+                        setCriminalLawOpen(true);
+                      },
+                      subItems: criminalLawItems,
+                    },
+                  ]}
+                />
+                {criminalLawOpen && (
+                  <div
+                    className="origin-top-left absolute left-48 top-0 mt-9 w-48 rounded-none shadow-lg bg-black ring-1 ring-gray-800"
+                    onMouseEnter={() => setCriminalLawOpen(true)}
+                    onMouseLeave={() => setCriminalLawOpen(false)}
+                  >
+                    <div className="py-1">
+                      {criminalLawItems.map(({ name, to }) => (
+                        <Link
+                          key={name}
+                          to={to}
+                          className="block px-4 py-2 text-sm text-white hover:bg-pink-600 transition-colors duration-200"
+                        >
+                          {name}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <Dropdown
                 label="Testimonials"
                 isActive={activeDropdown === 'Testimonials'}
-                onClick={() =>
-                  setActiveDropdown(
-                    activeDropdown === 'Testimonials' ? null : 'Testimonials'
-                  )
-                }
+                onMouseEnter={() => setActiveDropdown('Testimonials')}
+                onMouseLeave={() => setActiveDropdown(null)}
                 items={[
-                  { name: 'Clients', to: '/testimonials#clients' },
-                  { name: 'Awards', to: '/testimonials#awards' },
+                  {
+                    name: 'Clients Testimonials',
+                    to: '/testimonials#clientsTestimonials',
+                  },
+                  { name: 'Leave A Review', to: '/testimonials#LeaveAReview' },
                 ]}
               />
+
               <Dropdown
                 label="Resources"
                 isActive={activeDropdown === 'Resources'}
-                onClick={() =>
-                  setActiveDropdown(
-                    activeDropdown === 'Resources' ? null : 'Resources'
-                  )
-                }
+                onMouseEnter={() => setActiveDropdown('Resources')}
+                onMouseLeave={() => setActiveDropdown(null)}
                 items={[
-                  { name: 'Blog', to: '/resources#blog' },
-                  { name: 'Guides', to: '/resources#guides' },
+                  {
+                    name: 'Client Portal Guide',
+                    to: '/resources#ClientPortalGuide',
+                  },
+                  { name: 'Case Results', to: '/resources#CaseResults' },
                 ]}
               />
-              <NavLink label="Contact" to="/contact" />
+
+              <NavLink
+                label="Contact"
+                to="/contact"
+                isActive={location.pathname === '/contact'}
+              />
+
               <Link
                 to="/login"
-                className="ml-4 bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-md transition-all duration-300"
+                className="ml-4 bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-none transition-all duration-300"
               >
                 Login
               </Link>
             </div>
           </div>
 
-          {/* Mobile menu button */}
+          {/* Mobile menu button - Pink hamburger */}
           <div className="md:hidden flex items-center">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-gray-300 hover:text-white focus:outline-none"
+              className="text-pink-600 hover:text-pink-700 focus:outline-none transition-colors duration-300"
             >
               {isOpen ? (
-                <FiX className="h-6 w-6" />
+                <FiX className="h-8 w-8" />
               ) : (
-                <FiMenu className="h-6 w-6" />
+                <FiMenu className="h-8 w-8" />
               )}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile Navigation */}
-      {isOpen && (
-        <div className="md:hidden bg-black/90 backdrop-blur-sm">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <MobileNavLink
-              label="Home"
-              to="/"
-              onClick={() => setIsOpen(false)}
-            />
-            <MobileDropdown
-              label="Team"
-              items={[
-                { name: 'Members', to: '/team#members' },
-                { name: 'Leadership', to: '/team#leadership' },
-              ]}
-              onClick={() => setIsOpen(false)}
-            />
-            <MobileDropdown
-              label="Practice Area"
-              items={[
-                { name: 'Corporate', to: '/practice-areas#corporate' },
-                { name: 'Family', to: '/practice-areas#family' },
-              ]}
-              onClick={() => setIsOpen(false)}
-            />
-            <MobileDropdown
-              label="Testimonials"
-              items={[
-                { name: 'Clients', to: '/testimonials#clients' },
-                { name: 'Awards', to: '/testimonials#awards' },
-              ]}
-              onClick={() => setIsOpen(false)}
-            />
-            <MobileDropdown
-              label="Resources"
-              items={[
-                { name: 'Blog', to: '/resources#blog' },
-                { name: 'Guides', to: '/resources#guides' },
-              ]}
-              onClick={() => setIsOpen(false)}
-            />
-            <MobileNavLink
-              label="Contact"
-              to="/contact"
-              onClick={() => setIsOpen(false)}
-            />
-            <Link
-              to="/login"
-              onClick={() => setIsOpen(false)}
-              className="block w-full text-left text-white bg-pink-600 hover:bg-pink-700 px-3 py-2 rounded-md text-base font-medium transition-colors duration-300"
-            >
-              Login
-            </Link>
-          </div>
+      {/* Mobile Navigation - Smooth opening */}
+      <div
+        className={`md:hidden bg-black/95 overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-screen' : 'max-h-0'}`}
+      >
+        <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+          <MobileNavLink
+            label="Home"
+            to="/"
+            isActive={location.pathname === '/'}
+            onClick={() => setIsOpen(false)}
+          />
+
+          <MobileDropdown
+            label="Team"
+            isOpen={mobileOpenDropdown === 'Team'}
+            onClick={() => {
+              handleMobileDropdown('Team');
+              setIsOpen(true);
+            }}
+            onClose={() => setMobileOpenDropdown(null)}
+            items={[
+              { name: 'John Doe', to: '/team#JohnDoe' },
+              { name: 'Corley Yisreal', to: '/team#CorleyYisreal' },
+              { name: 'Sarah Parker', to: '/team#SarahParker' },
+            ]}
+          />
+
+          <MobileDropdown
+            label="Practice Areas"
+            isOpen={mobileOpenDropdown === 'Practice Areas'}
+            onClick={() => {
+              handleMobileDropdown('Practice Areas');
+              setIsOpen(true);
+            }}
+            onClose={() => setMobileOpenDropdown(null)}
+            items={[
+              {
+                name: 'Criminal Law',
+                to: '/practice-areas/criminal-law',
+                subItems: criminalLawItems,
+              },
+            ]}
+          />
+
+          <MobileDropdown
+            label="Testimonials"
+            isOpen={mobileOpenDropdown === 'Testimonials'}
+            onClick={() => {
+              handleMobileDropdown('Testimonials');
+              setIsOpen(true);
+            }}
+            onClose={() => setMobileOpenDropdown(null)}
+            items={[
+              {
+                name: 'Clients Testimonials',
+                to: '/testimonials#clientsTestimonials',
+              },
+              { name: 'Leave A Review', to: '/testimonials#LeaveAReview' },
+            ]}
+          />
+
+          <MobileDropdown
+            label="Resources"
+            isOpen={mobileOpenDropdown === 'Resources'}
+            onClick={() => {
+              handleMobileDropdown('Resources');
+              setIsOpen(true);
+            }}
+            onClose={() => setMobileOpenDropdown(null)}
+            items={[
+              {
+                name: 'Client Portal Guide',
+                to: '/resources#ClientPortalGuide',
+              },
+              { name: 'Case Results', to: '/resources#CaseResults' },
+            ]}
+          />
+
+          <MobileNavLink
+            label="Contact"
+            to="/contact"
+            isActive={location.pathname === '/contact'}
+            onClick={() => setIsOpen(false)}
+          />
+
+          <Link
+            to="/login"
+            onClick={() => setIsOpen(false)}
+            className="block w-full text-left text-white bg-pink-600 hover:bg-pink-700 px-3 py-2 rounded-none text-base font-medium transition-colors duration-300"
+          >
+            Login
+          </Link>
         </div>
-      )}
+      </div>
     </nav>
   );
 }
 
-function NavLink({ to, label }) {
+function NavLink({ to, label, isActive }) {
   return (
     <Link
       to={to}
-      className="relative text-gray-300 hover:text-white px-3 py-2 text-sm font-medium group transition-colors duration-300"
+      className={`relative text-gray-300 hover:text-white px-4 py-2 text-sm font-medium transition-colors duration-300 ${isActive ? 'text-pink-600' : ''}`}
     >
       {label}
-      <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-pink-600 transition-all duration-300 group-hover:w-full"></span>
+      <span
+        className={`absolute bottom-0 left-4 right-4 h-0.5 bg-pink-600 transition-all duration-300 ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+      ></span>
     </Link>
   );
 }
 
-function MobileNavLink({ to, label, onClick }) {
+function MobileNavLink({ to, label, isActive, onClick }) {
   return (
     <Link
       to={to}
       onClick={onClick}
-      className="block text-gray-300 hover:text-white hover:bg-gray-800 px-3 py-2 rounded-md text-base font-medium transition-colors duration-300"
+      className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-300 ${isActive ? 'text-pink-600' : 'text-gray-300 hover:text-white'}`}
     >
       {label}
     </Link>
   );
 }
 
-function Dropdown({ label, items, isActive, onClick }) {
+function Dropdown({
+  label,
+  items,
+  isActive,
+  onMouseEnter,
+  onMouseLeave,
+  onClick,
+}) {
   return (
     <div className="relative">
       <button
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
         onClick={onClick}
-        className="text-gray-300 hover:text-white px-3 py-2 text-sm font-medium flex items-center transition-colors duration-300 group"
+        className={`text-gray-300 hover:text-white px-4 py-2 text-sm font-medium flex items-center transition-colors duration-300 ${isActive ? 'text-pink-600' : ''}`}
       >
         {label}
         <svg
-          className={`ml-1 h-4 w-4 transition-transform duration-200 ${isActive ? 'rotate-180' : ''}`}
+          className={`ml-1 h-4 w-4 transition-transform duration-200 ${isActive ? 'rotate-180 text-pink-600' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -223,21 +333,39 @@ function Dropdown({ label, items, isActive, onClick }) {
             d="M19 9l-7 7-7-7"
           />
         </svg>
-        <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-pink-600 transition-all duration-300 group-hover:w-full"></span>
+        <span
+          className={`absolute bottom-0 left-4 right-4 h-0.5 bg-pink-600 transition-all duration-300 ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+        ></span>
       </button>
 
       {isActive && (
-        <div className="origin-top-right absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none transition-all duration-200 transform opacity-100 scale-100">
+        <div
+          className="origin-top-right absolute left-0 mt-0 w-48 rounded-none shadow-lg bg-black ring-1 ring-gray-800"
+          onMouseEnter={onMouseEnter}
+          onMouseLeave={onMouseLeave}
+        >
           <div className="py-1">
-            {items.map(({ name, to }) => (
-              <Link
-                key={name}
-                to={to}
-                className="block px-4 py-2 text-sm text-gray-700 hover:bg-pink-100 transition-colors duration-200"
-              >
-                {name}
-              </Link>
-            ))}
+            {items.map(({ name, to, subItems, onMouseEnter }) =>
+              subItems ? (
+                <div
+                  key={name}
+                  className="relative"
+                  onMouseEnter={onMouseEnter}
+                >
+                  <span className="block px-4 py-2 text-sm text-white hover:bg-pink-600 cursor-default">
+                    {name}
+                  </span>
+                </div>
+              ) : (
+                <Link
+                  key={name}
+                  to={to}
+                  className="block px-4 py-2 text-sm text-white hover:bg-pink-600 transition-colors duration-200"
+                >
+                  {name}
+                </Link>
+              )
+            )}
           </div>
         </div>
       )}
@@ -245,14 +373,12 @@ function Dropdown({ label, items, isActive, onClick }) {
   );
 }
 
-function MobileDropdown({ label, items, onClick }) {
-  const [isOpen, setIsOpen] = useState(false);
-
+function MobileDropdown({ label, items, isOpen, onClick, onClose }) {
   return (
     <div className="space-y-1">
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full text-left text-gray-300 hover:text-white hover:bg-gray-800 px-3 py-2 rounded-md text-base font-medium flex items-center justify-between transition-colors duration-300"
+        onClick={onClick}
+        className="w-full text-left text-gray-300 hover:text-white px-3 py-2 rounded-md text-base font-medium flex items-center justify-between transition-colors duration-300"
       >
         {label}
         <svg
@@ -272,16 +398,29 @@ function MobileDropdown({ label, items, onClick }) {
 
       {isOpen && (
         <div className="pl-4 space-y-1">
-          {items.map(({ name, to }) => (
-            <Link
-              key={name}
-              to={to}
-              onClick={onClick}
-              className="block text-gray-400 hover:text-white hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300"
-            >
-              {name}
-            </Link>
-          ))}
+          {items.flatMap((item) =>
+            item.subItems
+              ? item.subItems.map((subItem) => (
+                  <Link
+                    key={subItem.name}
+                    to={subItem.to}
+                    onClick={onClose}
+                    className="block text-gray-400 hover:text-white hover:bg-pink-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300"
+                  >
+                    {subItem.name}
+                  </Link>
+                ))
+              : [
+                  <Link
+                    key={item.name}
+                    to={item.to}
+                    onClick={onClose}
+                    className="block text-gray-400 hover:text-white hover:bg-pink-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300"
+                  >
+                    {item.name}
+                  </Link>,
+                ]
+          )}
         </div>
       )}
     </div>
