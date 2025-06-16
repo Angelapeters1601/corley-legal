@@ -31,7 +31,7 @@ export default function Nav() {
           <div className="flex-shrink-0">
             <Link to="/" className="flex items-center">
               <img
-                src="/CIPS_Logo.png"
+                src={`${import.meta.env.BASE_URL}CIPS_Logo.png`}
                 alt="Company Logo"
                 className="h-20 w-30"
               />

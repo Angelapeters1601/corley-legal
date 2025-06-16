@@ -10,10 +10,11 @@ export default function Footer() {
             {/* Logo Column */}
             <div className="flex flex-col items-start">
               <img
-                src="/CIPS_Logo.png"
-                alt="Corley Legal PLLC Logo"
+                src={`${import.meta.env.BASE_URL}CIPS_Logo.png`}
+                alt="Company Logo"
                 className="h-12 w-auto mb-4"
               />
+
               <div className="flex space-x-4">
                 <a
                   href="#"

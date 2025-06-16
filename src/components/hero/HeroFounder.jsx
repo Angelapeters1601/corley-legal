@@ -34,7 +34,9 @@ const HeroFounder = () => {
         {/* Image */}
         <div className="relative w-full md:w-96 h-250 rounded-lg overflow-hidden shadow-xl bg-gray-100">
           <img
-            src="/ChiefExecutiveParalegal.JPG"
+            src={`${import.meta.env.BASE_URL}ChiefExecutiveParalegal.JPG`}
+            a
+            lt="Chief Executive Paralegal"
             alt="Founder"
             className="w-full h-full object-cover object-top" // Focus on keeping the head in frame
           />

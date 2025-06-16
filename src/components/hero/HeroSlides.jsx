@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 
 const HeroSlides = () => {
   const images = [
-    '/RotaryImage1.jpg',
-    '/RotaryImage2.jpg',
-    '/RotaryImage3.jpg',
-    '/RotaryImage4.jpg',
-    '/RotaryImage5.png',
-    '/RotaryImage6.jpg',
-    '/RotaryImage7.jpg',
+    `${import.meta.env.BASE_URL}RotaryImage1.jpg`,
+    `${import.meta.env.BASE_URL}RotaryImage2.jpg`,
+    `${import.meta.env.BASE_URL}RotaryImage3.jpg`,
+    `${import.meta.env.BASE_URL}RotaryImage4.jpg`,
+    `${import.meta.env.BASE_URL}RotaryImage5.png`,
+    `${import.meta.env.BASE_URL}RotaryImage6.jpg`,
+    `${import.meta.env.BASE_URL}RotaryImage7.jpg`,
   ];
 
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -35,7 +35,9 @@ const HeroSlides = () => {
         {images.map((img, index) => (
           <div
             key={img}
-            className={`absolute inset-0 w-full h-full transition-opacity duration-500 ${index === currentIndex && fade ? 'opacity-100' : 'opacity-0'}`}
+            className={`absolute inset-0 w-full h-full transition-opacity duration-500 ${
+              index === currentIndex && fade ? 'opacity-100' : 'opacity-0'
+            }`}
           >
             <img
               src={img}
@@ -72,7 +74,11 @@ const HeroSlides = () => {
                 setFade(true);
               }, 500);
             }}
-            className={`w-3 h-3 rounded-full transition-all duration-300 ${index === currentIndex ? 'bg-pink-600 w-6' : 'bg-white bg-opacity-50'}`}
+            className={`w-3 h-3 rounded-full transition-all duration-300 ${
+              index === currentIndex
+                ? 'bg-pink-600 w-6'
+                : 'bg-white bg-opacity-50'
+            }`}
             aria-label={`Go to slide ${index + 1}`}
           />
         ))}
