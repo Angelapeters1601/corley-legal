@@ -8,11 +8,14 @@ import Testimonials from './pages/Testimonials';
 import Resources from './pages/Resources';
 import Contact from './pages/Contact';
 import Login from './pages/Login';
+import { Toaster } from 'react-hot-toast';
 
 export default function App() {
   return (
     <div className="min-h-screen flex flex-col">
+      <Toaster position="top-right" />
       <Router basename="/corley-legal">
+        {/* <Router basename="/corley-legal"> //production only */}
         <Routes>
           <Route element={<AppLayout />}>
             <Route path="/" element={<Home />} />
