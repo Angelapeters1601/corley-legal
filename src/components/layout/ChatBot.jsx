@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FiSend, FiUser, FiX } from 'react-icons/fi';
 import { FaRobot } from 'react-icons/fa';
+import { motion } from 'framer-motion'; // ✅ Import motion
 
 export default function ChatBot({ onClose }) {
   const [messages, setMessages] = useState([
@@ -169,7 +170,13 @@ export default function ChatBot({ onClose }) {
   };
 
   return (
-    <div className="fixed bottom-20 right-6 bg-white border border-gray-200 rounded-2xl shadow-2xl w-96 h-[32rem] z-50 flex flex-col overflow-hidden font-sans">
+    <motion.div
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 40 }}
+      transition={{ duration: 0.4, ease: 'easeInOut' }}
+      className="fixed bottom-20 right-6 bg-white border border-gray-200 rounded-2xl shadow-2xl w-96 h-[32rem] z-50 flex flex-col overflow-hidden font-sans"
+    >
       {/* Header */}
       <div className="bg-gradient-to-r from-pink-200 to-blue-300 text-gray-800 p-4 rounded-t-2xl flex justify-between items-center">
         <div className="flex items-center gap-3">
@@ -203,7 +210,6 @@ export default function ChatBot({ onClose }) {
                 msg.sender === 'user' ? 'justify-end' : 'justify-start'
               }`}
             >
-              {/* Bot Avatar */}
               {msg.sender === 'bot' && (
                 <div className="bg-pink-100 p-2 rounded-full flex-shrink-0 shadow-sm">
                   <FaRobot className="w-5 h-5 text-pink-500" />
@@ -237,7 +243,6 @@ export default function ChatBot({ onClose }) {
                 </span>
               </div>
 
-              {/* User Avatar */}
               {msg.sender === 'user' && (
                 <div className="bg-blue-100 p-2 rounded-full flex-shrink-0">
                   <FiUser className="w-5 h-5 text-blue-500" />
@@ -278,6 +283,6 @@ export default function ChatBot({ onClose }) {
             : 'We value your privacy. Your information is secure.'}
         </p>
       </div>
-    </div>
+    </motion.div>
   );
 }

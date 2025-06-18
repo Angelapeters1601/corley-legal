@@ -1,6 +1,7 @@
 import React from 'react';
 import { toast } from 'react-hot-toast';
 import { useState } from 'react';
+import { supabase } from '../services/supabaseClient';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -11,11 +12,14 @@ const Contact = () => {
     address: '',
     city: '',
     state: '',
-    clientStatus: '',
+    existingClient: false,
     zip: '',
-    help: '',
-    disclaimer: false,
+    helpMessage: '',
+    disclaimer: '',
   });
+
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -24,51 +28,77 @@ const Contact = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setSuccess(false);
 
-    // If disclaimer is not checked
+    console.log('Submitting:', formData);
+
     if (!formData.disclaimer) {
       toast.error('Please agree to the disclaimer before submitting.');
+      setLoading(false);
       return;
     }
 
-    if (formData.zip && !/^\d{5}$/.test(formData.zip)) {
+    if (formData.zip && !/^\d{5}$/.test(formData.zip.trim())) {
       toast.error('Please enter a valid 5-digit ZIP code.');
+      setLoading(false);
+      return;
+    }
+
+    const { data: testData, error: testError } = await supabase
+      .from('form_submissions')
+      .select('*')
+      .limit(1);
+
+    if (testError) {
+      console.error('Connection test failed:', testError);
       return;
     }
 
     try {
-      const response = await fetch(
-        'https://corley.legal/api/contact-form.php',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData),
-        }
-      );
+      const submissionData = {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zip: formData.zip,
+        existing_client: formData.existingClient,
+        help_message: formData.helpMessage,
+        disclaimer: formData.disclaimer,
+      };
 
-      if (response.ok) {
-        toast.success('Your message has been sent!');
-        setFormData({
-          firstName: '',
-          lastName: '',
-          email: '',
-          phone: '',
-          address: '',
-          city: '',
-          state: '',
-          zip: '',
-          help: '',
-          clientStatus: '',
-          disclaimer: false,
-        });
-      } else {
-        toast.error('There was an error sending your message.');
-      }
+      const { data, error } = await supabase
+        .from('form_submissions')
+        .insert([submissionData])
+        .select('*');
+
+      console.log('Supabase response:', { data, error }); // Debug log
+
+      if (error) throw error;
+
+      toast.success('Form submitted successfully!');
+      setSuccess(true);
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        address: '',
+        city: '',
+        state: '',
+        zip: '',
+        helpMessage: '',
+        existingClient: false,
+        disclaimer: '',
+      });
     } catch (error) {
-      toast.error('Something went wrong. Please try again later.');
-      console.error('Error submitting form:', error);
+      console.error('Submission error:', error.message);
+      toast.error('There was an error submitting your form. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -85,12 +115,7 @@ const Contact = () => {
             </span>
           </p>
 
-          <form
-            className="space-y-6"
-            method="POST"
-            action="/contact-form.php"
-            onSubmit={handleSubmit}
-          >
+          <form className="space-y-6" method="POST" onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label
@@ -304,10 +329,12 @@ const Contact = () => {
                 <label className="inline-flex items-center">
                   <input
                     type="radio"
-                    name="clientStatus"
-                    value="yes"
-                    checked={formData.clientStatus === 'yes'}
-                    onChange={handleChange}
+                    name="existingClient"
+                    // value="false"
+                    checked={formData.existingClient === true}
+                    onChange={() =>
+                      setFormData({ ...formData, existingClient: true })
+                    }
                     className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300"
                   />
                   <span className="ml-2 text-gray-700">Yes</span>
@@ -315,10 +342,15 @@ const Contact = () => {
                 <label className="inline-flex items-center">
                   <input
                     type="radio"
-                    name="clientStatus"
-                    value="no"
-                    checked={formData.clientStatus === 'no'}
-                    onChange={handleChange}
+                    name="existingClient"
+                    // value="true"
+                    checked={formData.existingClient === false}
+                    onChange={() =>
+                      setFormData({
+                        ...formData,
+                        existingClient: false,
+                      })
+                    }
                     className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300"
                   />
                   <span className="ml-2 text-gray-700">No</span>
@@ -335,8 +367,8 @@ const Contact = () => {
               </label>
               <textarea
                 id="help"
-                name="help"
-                value={formData.help}
+                name="helpMessage"
+                value={formData.helpMessage}
                 onChange={handleChange}
                 rows={4}
                 aria-label="Describe your legal needs"
@@ -378,11 +410,15 @@ const Contact = () => {
             </div>
 
             <button
+              disabled={loading}
               type="submit"
               className="w-full bg-pink-600 hover:bg-pink-700 text-white font-medium py-3 px-4 rounded-md transition-colors duration-300"
             >
-              Submit Request
+              {loading ? 'Submitting...' : 'Submit Request'}
             </button>
+            {success && (
+              <p style={{ color: 'green' }}>Form submitted successfully!</p>
+            )}
           </form>
         </div>
 
