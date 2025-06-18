@@ -1,6 +1,7 @@
+import React, { useState, useEffect, use } from 'react';
+import useVisitorTracking from './hooks/useVisitorTracking';
 import { Toaster } from 'react-hot-toast';
 import { supabase } from './services/supabaseClient';
-import React, { useState, useEffect } from 'react';
 
 import {
   BrowserRouter as Router,
@@ -16,10 +17,20 @@ import Testimonials from './pages/Testimonials';
 import Resources from './pages/Resources';
 import Contact from './pages/Contact';
 import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
+import Dashboard from './admin/Dashboard';
+import FormSubmissions from './admin/FormSubmissions';
+import LegalBriefings from './admin/LegalBriefings';
+import LiveAgent from './admin/LiveAgent';
+import Orders from './admin/Orders';
+import PrisonerMessaging from './admin/PrisonerMessaging';
+import ProtectedRoute from './admin/ProtectedRoute';
+import SubmissionDetail from './admin/SubmissionDetail';
+import Uploads from './admin/Uploads';
+import VisitorDashboard from './admin/VisitorDashboard';
 import NotFoundPage from './pages/NotFoundPage';
 
 export default function App() {
+  useVisitorTracking();
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -45,11 +56,26 @@ export default function App() {
             <Route path="/resources" element={<Resources />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/login" element={<Login />} />
-            <Route
-              path="/admin"
-              element={user ? <Dashboard /> : <Navigate to="/admin/login" />}
-            />
-            <Route path="*" element={<NotFoundPage />} />
+            <Route element={<ProtectedRoute />}>
+              <Route
+                path="/admin"
+                element={user ? <Dashboard /> : <Navigate to="/login" />}
+              />
+              <Route path="/admin/forms" element={<FormSubmissions />} />
+              <Route path="/admin/visitors" element={<VisitorDashboard />} />
+              <Route path="/admin/orders" element={<Orders />} />
+              <Route path="/admin/uploads" element={<Uploads />} />
+              <Route path="/admin/messaging" element={<PrisonerMessaging />} />
+              <Route path="/admin/briefings" element={<LegalBriefings />} />
+              <Route path="/admin/live-agent" element={<LiveAgent />} />
+
+              <Route
+                path="/admin/submission/:id"
+                element={<SubmissionDetail />}
+              />
+              <Route path="/admin/visitors" element={<VisitorDashboard />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Route>
           </Route>
         </Routes>
       </Router>
