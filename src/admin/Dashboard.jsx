@@ -126,13 +126,12 @@ export default function Dashboard() {
         </motion.div>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Dashboard Cards */}
+        <div className="grid grid-cols-1 gap-6 max-w-2xl mx-auto">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
-            className="lg:col-span-1 space-y-4"
+            className="space-y-4"
           >
             {dashboardItems.map((item, index) => (
               <motion.div
