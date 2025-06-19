@@ -20,7 +20,8 @@ import Login from './pages/Login';
 import Dashboard from './admin/Dashboard';
 import FormSubmissions from './admin/FormSubmissions';
 import LegalBriefings from './admin/LegalBriefings';
-import LiveAgent from './admin/LiveAgent';
+import LiveAgent from './admin/LiveChat';
+import LiveChatSession from './admin/LiveChatSession';
 import Orders from './admin/Orders';
 import PrisonerMessaging from './admin/PrisonerMessaging';
 import ProtectedRoute from './admin/ProtectedRoute';
@@ -28,6 +29,7 @@ import SubmissionDetail from './admin/SubmissionDetail';
 import Uploads from './admin/Uploads';
 import VisitorDashboard from './admin/VisitorDashboard';
 import NotFoundPage from './pages/NotFoundPage';
+import LiveChat from './admin/LiveChat';
 
 export default function App() {
   useVisitorTracking();
@@ -67,7 +69,11 @@ export default function App() {
               <Route path="/admin/uploads" element={<Uploads />} />
               <Route path="/admin/messaging" element={<PrisonerMessaging />} />
               <Route path="/admin/briefings" element={<LegalBriefings />} />
-              <Route path="/admin/live-agent" element={<LiveAgent />} />
+              <Route path="/admin/live-agent" element={<LiveChatSession />} />
+              <Route
+                path="/admin/live-agent/:sessionId"
+                element={<LiveChat />}
+              />
 
               <Route
                 path="/admin/submission/:id"

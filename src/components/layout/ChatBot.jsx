@@ -1,17 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FiSend, FiUser, FiX } from 'react-icons/fi';
 import { FaRobot } from 'react-icons/fa';
-import { motion } from 'framer-motion'; // ✅ Import motion
+import { motion } from 'framer-motion';
+import { supabase } from '../../services/supabaseClient';
+import { v4 as uuidv4 } from 'uuid';
+
+const SESSION_KEY = 'corley_chat_session';
 
 export default function ChatBot({ onClose }) {
-  const [messages, setMessages] = useState([
-    {
-      sender: 'bot',
-      text: 'Hello! 👋 Welcome to Corley Integrated Paralegals Services. How can I help you today?',
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const [sessionId, setSessionId] = useState(null);
   const [awaitingName, setAwaitingName] = useState(false);
   const [awaitingContact, setAwaitingContact] = useState(false);
   const [userName, setUserName] = useState('');
@@ -19,14 +18,47 @@ export default function ChatBot({ onClose }) {
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    scrollToBottom();
+    let sessionId = localStorage.getItem(SESSION_KEY);
+    if (!sessionId) {
+      sessionId = uuidv4();
+      localStorage.setItem(SESSION_KEY, sessionId);
+    }
+    setSessionId(sessionId);
+
+    async function loadMessages() {
+      const { data, error } = await supabase
+        .from('chat_sessions')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('timestamp', { ascending: true });
+
+      if (!error && data.length > 0) {
+        setMessages(
+          data.map((msg) => ({
+            sender: msg.sender,
+            text: msg.text,
+            timestamp: new Date(msg.timestamp),
+          }))
+        );
+      } else {
+        setMessages([
+          {
+            sender: 'bot',
+            text: 'Hello! 👋 Welcome to Corley Integrated Paralegals Services. How can I help you today?',
+            timestamp: new Date(),
+          },
+        ]);
+      }
+    }
+
+    loadMessages();
+  }, []);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
 
@@ -37,13 +69,23 @@ export default function ChatBot({ onClose }) {
     };
     setMessages((prev) => [...prev, userMessage]);
 
-    setTimeout(() => {
+    await supabase.from('chat_sessions').insert([
+      {
+        session_id: sessionId,
+        sender: 'user',
+        text: input.trim(),
+      },
+    ]);
+
+    setTimeout(async () => {
       const botReply = generateBotReply(input.trim());
-      setMessages((prev) => [
-        ...prev,
+      setMessages((prev) => [...prev, { ...botReply, timestamp: new Date() }]);
+
+      await supabase.from('chat_sessions').insert([
         {
-          ...botReply,
-          timestamp: new Date(),
+          session_id: sessionId,
+          sender: 'bot',
+          text: botReply.text,
         },
       ]);
 
@@ -72,62 +114,6 @@ export default function ChatBot({ onClose }) {
       return {
         sender: 'bot',
         text: `Thank you! An agent will contact you at ${question.trim()} shortly.`,
-        isTransferComplete: true,
-      };
-    }
-
-    if (lowerQ.includes('hi') || lowerQ.includes('hello')) {
-      return {
-        sender: 'bot',
-        text: 'Hello! 😊 Welcome to Corley Integrated Paralegals Services.',
-      };
-    }
-
-    if (lowerQ.includes('how are you')) {
-      return { sender: 'bot', text: "I'm just a bot, but thanks for asking!" };
-    }
-
-    if (lowerQ.includes('your name')) {
-      return { sender: 'bot', text: "I'm Lex, your virtual assistant." };
-    }
-
-    if (lowerQ.includes('my name')) {
-      setAwaitingName(true);
-      return { sender: 'bot', text: "What's your name?" };
-    }
-
-    if (lowerQ.includes('contact') || lowerQ.includes('phone')) {
-      return {
-        sender: 'bot',
-        text: 'Our number is (212) 347-5020 or you can send us a mail at info@corley.legal. Would you like to speak to an agent?',
-      };
-    }
-
-    if (lowerQ.includes('location') || lowerQ.includes('address')) {
-      return {
-        sender: 'bot',
-        text: "We're located at 99 Wall Street Suite 4837, New York, NY 10005.",
-      };
-    }
-
-    if (lowerQ.includes('specialization') || lowerQ.includes('specialty')) {
-      return {
-        sender: 'bot',
-        text: 'We specialise in criminal law.',
-      };
-    }
-
-    if (lowerQ.includes('founder') || lowerQ.includes('corley')) {
-      return {
-        sender: 'bot',
-        text: 'Corley Paralegals was founded by James Corley in 2005.',
-      };
-    }
-
-    if (lowerQ.includes('company') || lowerQ.includes('about')) {
-      return {
-        sender: 'bot',
-        text: "We're Corley Paralegals, a premier legal support firm based in New York.",
       };
     }
 
@@ -136,11 +122,10 @@ export default function ChatBot({ onClose }) {
       lowerQ.includes('human') ||
       lowerQ.includes('representative')
     ) {
-      setIsTransferring(true);
       return {
         sender: 'bot',
-        text: 'Connecting you to a live agent... Please hold. 🕒',
-        isTransfer: true,
+        text: 'Would you like to connect to a live agent?',
+        showTransferButton: true,
       };
     }
 
@@ -158,16 +143,34 @@ export default function ChatBot({ onClose }) {
       {
         sender: 'bot',
         text: 'Please share your contact info so an agent can reach you:',
-        isTransferPrompt: true,
         timestamp: new Date(),
       },
     ]);
     setAwaitingContact(true);
   };
 
-  const formatTime = (date) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  if (localStorage.getItem('transferredToAgent') === 'true') {
+    return null;
+  }
+
+  const handleEndSession = () => {
+    localStorage.removeItem(SESSION_KEY);
+    setMessages([
+      {
+        sender: 'bot',
+        text: 'Session ended. Feel free to start a new chat anytime.',
+        timestamp: new Date(),
+      },
+    ]);
+    setIsTransferring(false);
+    setAwaitingName(false);
+    setAwaitingContact(false);
+    setUserName('');
+    setInput('');
   };
+
+  const formatTime = (date) =>
+    date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   return (
     <motion.div
@@ -177,7 +180,6 @@ export default function ChatBot({ onClose }) {
       transition={{ duration: 0.4, ease: 'easeInOut' }}
       className="fixed bottom-20 right-6 bg-white border border-gray-200 rounded-2xl shadow-2xl w-96 h-[32rem] z-50 flex flex-col overflow-hidden font-sans"
     >
-      {/* Header */}
       <div className="bg-gradient-to-r from-pink-200 to-blue-300 text-gray-800 p-4 rounded-t-2xl flex justify-between items-center">
         <div className="flex items-center gap-3">
           <div className="bg-white p-1.5 rounded-full">
@@ -192,15 +194,11 @@ export default function ChatBot({ onClose }) {
             </p>
           </div>
         </div>
-        <button
-          onClick={onClose}
-          className="text-gray-600 hover:text-gray-800 transition-colors focus:outline-none"
-        >
+        <button onClick={onClose} className="text-gray-600 hover:text-gray-800">
           <FiX className="w-5 h-5" />
         </button>
       </div>
 
-      {/* Messages */}
       <div className="p-4 flex-1 overflow-y-auto bg-gray-50">
         <div className="space-y-4">
           {messages.map((msg, i) => (
@@ -254,7 +252,6 @@ export default function ChatBot({ onClose }) {
         </div>
       </div>
 
-      {/* Input */}
       <div className="p-4 border-t border-gray-200 bg-white">
         <form onSubmit={handleSubmit} className="flex gap-2 items-center">
           <input
@@ -272,11 +269,19 @@ export default function ChatBot({ onClose }) {
           />
           <button
             type="submit"
-            className="bg-blue-400 hover:bg-blue-500 text-white p-3 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-blue-200"
+            className="bg-blue-400 hover:bg-blue-500 text-white p-3 rounded-xl transition-colors"
           >
             <FiSend size={18} />
           </button>
         </form>
+        <div className="mt-3 flex justify-center">
+          <button
+            onClick={handleEndSession}
+            className="text-xs text-red-500 hover:underline"
+          >
+            End Session
+          </button>
+        </div>
         <p className="text-xs text-gray-500 mt-2 text-center">
           {isTransferring
             ? 'Connecting you to an agent...'
