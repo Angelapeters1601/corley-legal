@@ -1,4 +1,5 @@
 import React, { useState, useEffect, use } from 'react';
+
 import useVisitorTracking from './hooks/useVisitorTracking';
 import { Toaster } from 'react-hot-toast';
 import { supabase } from './services/supabaseClient';
@@ -9,6 +10,7 @@ import {
   Route,
   Navigate,
 } from 'react-router-dom';
+import ScrollToTop from './ScrollToTop';
 import AppLayout from './components/layout/AppLayout';
 import Home from './pages/Home';
 import Team from './pages/Team';
@@ -20,8 +22,8 @@ import Login from './pages/Login';
 import Dashboard from './admin/Dashboard';
 import FormSubmissions from './admin/FormSubmissions';
 import LegalBriefings from './admin/LegalBriefings';
-import LiveAgent from './admin/LiveChat';
-import LiveChatSession from './admin/LiveChatSession';
+import LiveChat from './admin/LiveChat';
+import LiveChatSessions from './admin/LiveChatSession';
 import Orders from './admin/Orders';
 import PrisonerMessaging from './admin/PrisonerMessaging';
 import ProtectedRoute from './admin/ProtectedRoute';
@@ -29,7 +31,6 @@ import SubmissionDetail from './admin/SubmissionDetail';
 import Uploads from './admin/Uploads';
 import VisitorDashboard from './admin/VisitorDashboard';
 import NotFoundPage from './pages/NotFoundPage';
-import LiveChat from './admin/LiveChat';
 
 export default function App() {
   useVisitorTracking();
@@ -49,6 +50,7 @@ export default function App() {
       <Router basename="/corley-legal">
         {/* <Router basename="/"> */}
         {/* <Router basename="/corley-legal"> //production only */}
+        <ScrollToTop />
         <Routes>
           <Route element={<AppLayout />}>
             <Route path="/" element={<Home />} />
@@ -69,9 +71,9 @@ export default function App() {
               <Route path="/admin/uploads" element={<Uploads />} />
               <Route path="/admin/messaging" element={<PrisonerMessaging />} />
               <Route path="/admin/briefings" element={<LegalBriefings />} />
-              <Route path="/admin/live-agent" element={<LiveChatSession />} />
+              <Route path="/admin/live-chats" element={<LiveChatSessions />} />
               <Route
-                path="/admin/live-agent/:sessionId"
+                path="/admin/live-chat/:sessionId"
                 element={<LiveChat />}
               />
 

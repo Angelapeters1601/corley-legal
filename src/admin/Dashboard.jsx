@@ -65,7 +65,7 @@ export default function Dashboard() {
       icon: <FiMail />,
       label: 'Live Agent Chat',
       color: 'bg-red-100 text-red-600',
-      path: '/admin/live-agent',
+      path: '/admin/live-chats',
     },
     {
       icon: <FiDollarSign />,

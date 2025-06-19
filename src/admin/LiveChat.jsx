@@ -1,28 +1,40 @@
-// LiveChatSession.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../services/supabaseClient';
-import { FiSend } from 'react-icons/fi';
 
-export default function LiveChatSession() {
-  const { sessionId } = useParams();
+export default function LiveChat() {
+  const { sessionId } = useParams(); // From URL: `/live-chat/:sessionId`
   const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState('');
+  const [input, setInput] = useState('');
+  const [contactInfo, setContactInfo] = useState('');
   const messagesEndRef = useRef(null);
 
+  // 1. Fetch chat history and contact info
   useEffect(() => {
-    const fetchMessages = async () => {
-      const { data, error } = await supabase
-        .from('chat_messages')
+    const fetchData = async () => {
+      // Get messages
+      const { data: messages } = await supabase
+        .from('chat_sessions')
         .select('*')
         .eq('session_id', sessionId)
-        .order('created_at', { ascending: true });
+        .order('timestamp', { ascending: true });
 
-      if (!error && data) setMessages(data);
+      // Get user's contact info (email/phone)
+      const { data: metadata } = await supabase
+        .from('chat_metadata')
+        .select('contact_info')
+        .eq('session_id', sessionId)
+        .single();
+
+      setMessages(messages || []);
+      setContactInfo(metadata?.contact_info || 'No contact info');
     };
 
-    fetchMessages();
+    fetchData();
+  }, [sessionId]);
 
+  // 2. Subscribe to new messages (realtime)
+  useEffect(() => {
     const channel = supabase
       .channel(`chat:${sessionId}`)
       .on(
@@ -30,7 +42,7 @@ export default function LiveChatSession() {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'chat_messages',
+          table: 'chat_sessions',
           filter: `session_id=eq.${sessionId}`,
         },
         (payload) => {
@@ -40,25 +52,49 @@ export default function LiveChatSession() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(channel); // Cleanup
     };
   }, [sessionId]);
 
+  // 3. Auto-scroll to newest message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSend = async () => {
-    if (newMessage.trim()) {
-      await supabase.from('chat_messages').insert({
+  // 4. Send message as agent
+  const handleSend = async (e) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+
+    // Add message to local state IMMEDIATELY (optimistic update)
+    const newMessage = {
+      session_id: sessionId,
+      sender: 'agent',
+      text: input.trim(),
+      timestamp: new Date().toISOString(),
+      id: Math.random().toString(36), // Temporary ID
+    };
+
+    setMessages((prev) => [...prev, newMessage]);
+    setInput('');
+
+    // Then send to Supabase
+
+    const { error } = await supabase.from('chat_sessions').insert([
+      {
         session_id: sessionId,
-        sender: 'agent',
-        message: newMessage.trim(),
-      });
-      setNewMessage('');
+        sender: 'agent', // Differentiate agent messages
+        text: input.trim(),
+      },
+    ]);
+    if (error) {
+      // Rollback if Supabase fails
+      setMessages((prev) => prev.filter((msg) => msg.id !== newMessage.id));
+      alert('Failed to send message');
     }
   };
 
+  // 5. Format timestamp
   const formatTime = (date) =>
     new Date(date).toLocaleTimeString([], {
       hour: '2-digit',
@@ -66,31 +102,29 @@ export default function LiveChatSession() {
     });
 
   return (
-    <div className="max-w-4xl mx-auto mt-10 p-6 bg-white shadow rounded-xl h-[80vh] flex flex-col">
-      <h1 className="text-2xl font-bold mb-4 text-blue-700">
-        Live Chat Session - #{sessionId ? sessionId.slice(0, 8) : 'Loading...'}
-      </h1>
+    <div className="max-w-3xl mx-auto p-4 bg-white rounded-lg shadow">
+      <h2 className="text-xl font-bold mb-2">Chat with {contactInfo}</h2>
+      <p className="text-sm text-gray-500 mb-4">
+        Session ID: {sessionId.slice(0, 8)}...
+      </p>
 
-      <div className="flex-1 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50">
-        {messages.map((msg, index) => (
+      {/* Message History */}
+      <div className="h-96 overflow-y-auto mb-4 space-y-3">
+        {messages.map((msg) => (
           <div
-            key={msg.id || index}
-            className={`mb-4 flex ${
-              msg.sender === 'agent' ? 'justify-end' : 'justify-start'
-            }`}
+            key={msg.id}
+            className={`flex ${msg.sender === 'agent' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-xs md:max-w-sm p-3 rounded-2xl shadow-sm ${
+              className={`max-w-xs p-3 rounded-lg ${
                 msg.sender === 'agent'
-                  ? 'bg-green-100 text-gray-800 rounded-br-none'
-                  : msg.sender === 'bot'
-                    ? 'bg-white text-gray-800 rounded-bl-none'
-                    : 'bg-blue-100 text-gray-800 rounded-bl-none'
+                  ? 'bg-blue-100 text-blue-900'
+                  : 'bg-gray-100 text-gray-900'
               }`}
             >
-              <p className="text-sm">{msg.message}</p>
-              <p className="text-xs text-gray-500 mt-1 text-right">
-                {formatTime(msg.created_at)}
+              <p>{msg.text}</p>
+              <p className="text-xs mt-1 opacity-70">
+                {formatTime(msg.timestamp)}
               </p>
             </div>
           </div>
@@ -98,21 +132,21 @@ export default function LiveChatSession() {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="mt-4 flex gap-2">
+      {/* Message Input */}
+      <form onSubmit={handleSend} className="flex gap-2">
         <input
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
           placeholder="Type your reply..."
-          className="flex-1 border border-gray-300 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+          className="flex-1 border p-2 rounded"
         />
         <button
-          onClick={handleSend}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-xl transition-colors"
+          type="submit"
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
         >
-          <FiSend size={18} />
+          Send
         </button>
-      </div>
+      </form>
     </div>
   );
 }
