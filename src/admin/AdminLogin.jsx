@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiEye, FiEyeOff, FiLock, FiMail } from 'react-icons/fi';
 
-export default function Login() {
+export default function AdminLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -45,7 +45,9 @@ export default function Login() {
         className="w-full max-w-md bg-white rounded-xl shadow-lg overflow-hidden p-8"
       >
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-800 mb-2">Login</h2>
+          <h2 className="text-3xl font-bold text-gray-800 mb-2">
+            Admin Portal
+          </h2>
           <p className="text-gray-600">Enter your credentials to continue</p>
         </div>
 
@@ -99,7 +101,7 @@ export default function Login() {
             </button>
           </div>
 
-          {/* <motion.button
+          <motion.button
             type="submit"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -137,7 +139,7 @@ export default function Login() {
             ) : (
               'Sign In'
             )}
-          </motion.button> */}
+          </motion.button>
         </div>
 
         <div className="mt-6 text-center">

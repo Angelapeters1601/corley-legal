@@ -98,6 +98,9 @@ export default function LiveChatSessions() {
   const formatTime = (date) => {
     try {
       return new Date(date).toLocaleTimeString([], {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
       });
@@ -141,7 +144,7 @@ export default function LiveChatSessions() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white rounded shadow mt-10">
+    <div className="max-w-4xl mt-[125px] mx-auto p-6 bg-white rounded shadow">
       <h2 className="text-xl font-semibold mb-6">Live Chat Sessions</h2>
 
       {isLoading ? (

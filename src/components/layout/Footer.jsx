@@ -68,7 +68,7 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="bg-black text-white">
+    <footer className="bg-customblue text-white">
       {/* Top Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
@@ -86,7 +86,7 @@ export default function Footer() {
                   href={social.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-gray-400 hover:text-pink-500 transition-colors"
+                  className="text-gray-100 hover:text-pink-500 transition-colors"
                   aria-label={social.label}
                 >
                   <social.icon className="h-6 w-6" />
@@ -98,7 +98,7 @@ export default function Footer() {
           {/* Contact Info */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-pink-500">Contact Us</h3>
-            <div className="text-gray-400 text-sm space-y-2">
+            <div className="text-gray-100 text-sm space-y-2">
               <p className="flex items-start gap-2">
                 <FaMapMarkerAlt className="mt-1" />
                 99 Wall Street Suite 4837, New York, NY 10005
@@ -117,7 +117,7 @@ export default function Footer() {
           {/* Quick Links */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-pink-500">Quick Links</h3>
-            <ul className="text-gray-400 text-sm space-y-2">
+            <ul className="text-gray-100 text-sm space-y-2">
               {quickLinks.map((link, i) => (
                 <li key={i} className="flex items-center gap-2">
                   <link.icon className="text-pink-500" />
@@ -137,10 +137,37 @@ export default function Footer() {
             <h3 className="text-lg font-semibold text-pink-500">
               Working Hours
             </h3>
-            <p className="text-gray-400 text-sm">
-              Mon – Fri: 9:00 AM – 6:00 PM <br />
-              Sat – Sun: Closed
-            </p>
+
+            <div className="text-white text-sm space-y-1">
+              <div className="flex">
+                <span className="w-28 font-medium">Sunday:</span>
+                <span>8:00 AM – 8:00 PM</span>
+              </div>
+              <div className="flex">
+                <span className="w-28 font-medium">Monday:</span>
+                <span>8:00 AM – 8:00 PM</span>
+              </div>
+              <div className="flex">
+                <span className="w-28 font-medium">Tuesday:</span>
+                <span>8:00 AM – 8:00 PM</span>
+              </div>
+              <div className="flex">
+                <span className="w-28 font-medium">Wednesday:</span>
+                <span>8:00 AM – 8:00 PM</span>
+              </div>
+              <div className="flex">
+                <span className="w-28 font-medium">Thursday:</span>
+                <span>8:00 AM – 8:00 PM</span>
+              </div>
+              <div className="flex">
+                <span className="w-28 font-medium">Friday:</span>
+                <span>8:00 AM – 4:00 PM</span>
+              </div>
+              <div className="flex">
+                <span className="w-28 font-medium">Saturday:</span>
+                <span className="text-gray-300">Closed</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -45,7 +45,7 @@ export default function Dashboard() {
 
   async function handleLogout() {
     await supabase.auth.signOut();
-    navigate('/login');
+    navigate('/admin/login');
   }
 
   const dashboardItems = [
@@ -98,7 +98,7 @@ export default function Dashboard() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="min-h-screen bg-gradient-to-br from-blue-50 to-pink-50 p-4 md:p-8"
+      className="min-h-screen mt-[125px] bg-gradient-to-br from-blue-50 to-pink-50 p-4 md:p-8"
     >
       <div className="max-w-7xl mx-auto">
         {/* Header */}

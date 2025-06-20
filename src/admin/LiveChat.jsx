@@ -1,15 +1,18 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../services/supabaseClient';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiSend, FiX } from 'react-icons/fi';
 
 export default function LiveChat() {
-  const { sessionId } = useParams(); // From URL: `/live-chat/:sessionId`
+  const { sessionId } = useParams();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [contactInfo, setContactInfo] = useState('');
+  const [sessionStatus, setSessionStatus] = useState('active');
   const messagesEndRef = useRef(null);
 
-  // 1. Fetch chat history and contact info
+  // 1. Fetch chat history and metadata
   useEffect(() => {
     const fetchData = async () => {
       // Get messages
@@ -19,21 +22,22 @@ export default function LiveChat() {
         .eq('session_id', sessionId)
         .order('timestamp', { ascending: true });
 
-      // Get user's contact info (email/phone)
+      // Get session metadata
       const { data: metadata } = await supabase
         .from('chat_metadata')
-        .select('contact_info')
+        .select('*')
         .eq('session_id', sessionId)
         .single();
 
       setMessages(messages || []);
       setContactInfo(metadata?.contact_info || 'No contact info');
+      setSessionStatus(metadata?.status || 'active');
     };
 
     fetchData();
   }, [sessionId]);
 
-  // 2. Subscribe to new messages (realtime)
+  // 2. Subscribe to new messages
   useEffect(() => {
     const channel = supabase
       .channel(`chat:${sessionId}`)
@@ -49,52 +53,76 @@ export default function LiveChat() {
           setMessages((prev) => [...prev, payload.new]);
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'chat_metadata',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          setSessionStatus(payload.new.status);
+          if (payload.new.status === 'completed') {
+            alert('Session has been ended by the user');
+          }
+        }
+      )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel); // Cleanup
+      supabase.removeChannel(channel);
     };
   }, [sessionId]);
 
   // 3. Auto-scroll to newest message
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  // useEffect(() => {
+  //   messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // }, [messages]);
 
   // 4. Send message as agent
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || sessionStatus === 'completed') return;
 
-    // Add message to local state IMMEDIATELY (optimistic update)
     const newMessage = {
       session_id: sessionId,
       sender: 'agent',
       text: input.trim(),
       timestamp: new Date().toISOString(),
-      id: Math.random().toString(36), // Temporary ID
+      id: Math.random().toString(36),
     };
 
     setMessages((prev) => [...prev, newMessage]);
     setInput('');
 
-    // Then send to Supabase
-
     const { error } = await supabase.from('chat_sessions').insert([
       {
         session_id: sessionId,
-        sender: 'agent', // Differentiate agent messages
+        sender: 'agent',
         text: input.trim(),
       },
     ]);
+
     if (error) {
-      // Rollback if Supabase fails
       setMessages((prev) => prev.filter((msg) => msg.id !== newMessage.id));
       alert('Failed to send message');
     }
   };
 
-  // 5. Format timestamp
+  // 5. End session handler
+  const handleEndSession = async () => {
+    if (window.confirm('Are you sure you want to end this session?')) {
+      await supabase
+        .from('chat_metadata')
+        .update({ status: 'completed' })
+        .eq('session_id', sessionId);
+      setSessionStatus('completed');
+      alert('Session ended successfully');
+    }
+  };
+
+  // 6. Format timestamp
   const formatTime = (date) =>
     new Date(date).toLocaleTimeString([], {
       hour: '2-digit',
@@ -102,51 +130,124 @@ export default function LiveChat() {
     });
 
   return (
-    <div className="max-w-3xl mx-auto p-4 bg-white rounded-lg shadow">
-      <h2 className="text-xl font-bold mb-2">Chat with {contactInfo}</h2>
-      <p className="text-sm text-gray-500 mb-4">
-        Session ID: {sessionId.slice(0, 8)}...
-      </p>
-
-      {/* Message History */}
-      <div className="h-96 overflow-y-auto mb-4 space-y-3">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex ${msg.sender === 'agent' ? 'justify-end' : 'justify-start'}`}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 20 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+      className="max-w-2xl mt-[150px] mx-auto p-6 bg-white rounded-xl shadow-xl border border-gray-100"
+    >
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
+        <div>
+          <motion.h2
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-2xl font-bold text-gray-800"
           >
-            <div
-              className={`max-w-xs p-3 rounded-lg ${
-                msg.sender === 'agent'
-                  ? 'bg-blue-100 text-blue-900'
-                  : 'bg-gray-100 text-gray-900'
+            Chat with <span className="text-blue-600">{contactInfo}</span>
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="text-sm text-gray-500"
+          >
+            Session: {sessionId.slice(0, 8)}... • Status:
+            <span
+              className={`ml-1 font-medium ${
+                sessionStatus === 'active' ? 'text-green-500' : 'text-red-500'
               }`}
             >
-              <p>{msg.text}</p>
-              <p className="text-xs mt-1 opacity-70">
-                {formatTime(msg.timestamp)}
-              </p>
-            </div>
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
+              {sessionStatus}
+            </span>
+          </motion.p>
+        </div>
+
+        {sessionStatus === 'active' && (
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={handleEndSession}
+            className="flex items-center gap-1 bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg text-sm shadow-md hover:shadow-lg transition-all"
+          >
+            <FiX size={16} />
+            End Session
+          </motion.button>
+        )}
+      </div>
+
+      {/* Message History */}
+      <div className="h-[400px] overflow-y-auto mb-6 pr-2">
+        <div className="space-y-3">
+          <AnimatePresence>
+            {messages.map((msg) => (
+              <motion.div
+                key={msg.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className={`flex ${msg.sender === 'agent' ? 'justify-end' : 'justify-start'}`}
+              >
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  className={`max-w-[80%] p-4 rounded-2xl ${
+                    msg.sender === 'agent'
+                      ? 'bg-gradient-to-br from-blue-100 to-blue-50 text-blue-900 rounded-br-none shadow-sm'
+                      : 'bg-gray-50 text-gray-800 rounded-bl-none shadow-sm'
+                  }`}
+                >
+                  <p className="text-gray-800">{msg.text}</p>
+                  <p className="text-xs mt-2 opacity-70">
+                    {formatTime(msg.timestamp)} • {msg.sender}
+                  </p>
+                </motion.div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+          <div ref={messagesEndRef} />
+        </div>
       </div>
 
       {/* Message Input */}
-      <form onSubmit={handleSend} className="flex gap-2">
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Type your reply..."
-          className="flex-1 border p-2 rounded"
-        />
-        <button
-          type="submit"
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
-          Send
-        </button>
-      </form>
-    </div>
+      <AnimatePresence mode="wait">
+        {sessionStatus === 'active' ? (
+          <motion.form
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            onSubmit={handleSend}
+            className="flex gap-3 items-center"
+          >
+            <motion.input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Type your reply..."
+              className="flex-1 border border-gray-200 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-transparent transition-all"
+              whileFocus={{ borderColor: '#3b82f6' }}
+            />
+            <motion.button
+              type="submit"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 rounded-xl shadow-md hover:shadow-lg transition-all"
+              disabled={!input.trim()}
+            >
+              <FiSend size={18} />
+            </motion.button>
+          </motion.form>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="p-4 bg-gray-50 text-center text-gray-600 rounded-xl border border-gray-200"
+          >
+            <p className="font-medium">This conversation has ended</p>
+            <p className="text-sm mt-1">No further messages can be sent</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }

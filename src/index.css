@@ -1,1 +1,31 @@
 @import 'tailwindcss';
+
+@layer utilities {
+  /* Custom Pink */
+  .bg-custompink {
+    background-color: #ff66c4;
+  }
+  .text-custompink {
+    color: #ff66c4;
+  }
+  .border-custompink {
+    border-color: #ff66c4;
+  }
+  .bg-customblue {
+    background-color: #7889d6;
+  }
+  .bg-customblue-40 {
+    background-color: rgba(120, 137, 214, 0.4); /* 40% opacity */
+  }
+  .text-customblue {
+    background-color: #7889d6;
+  }
+  .border-customblue {
+    background-color: #7889d6;
+  }
+
+  /* Add other utilities as needed (hover, focus, etc.) */
+  .hover:bg-custompink:hover {
+    background-color: #ff66c4;
+  }
+}

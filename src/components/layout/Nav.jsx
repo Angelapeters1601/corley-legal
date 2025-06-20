@@ -40,7 +40,10 @@ export default function Nav() {
   };
 
   return (
-    <nav ref={navRef} className="bg-black py-8 top-0 w-full z-50 shadow-lg">
+    <nav
+      ref={navRef}
+      className="absolute bg-customblue-40 w-full z-50 py-8 top-0"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -101,7 +104,7 @@ export default function Nav() {
                 />
                 {criminalLawOpen && (
                   <div
-                    className="origin-top-left absolute left-48 top-0 mt-9 w-48 rounded-none shadow-lg bg-black ring-1 ring-gray-800"
+                    className="origin-top-left absolute left-48 top-0 mt-9 w-48 rounded-none shadow-lg bg-black/90 ring-1 ring-gray-800 backdrop-blur-sm"
                     onMouseEnter={() => setCriminalLawOpen(true)}
                     onMouseLeave={() => setCriminalLawOpen(false)}
                   >
@@ -163,11 +166,12 @@ export default function Nav() {
             </div>
           </div>
 
-          {/* Mobile menu button - Pink hamburger */}
+          {/* Mobile menu button */}
           <div className="md:hidden flex items-center">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-pink-600 hover:text-pink-700 focus:outline-none transition-colors duration-300"
+              className="text-pink-600 hover:text-pink-700 focus:outline-none
+               transition-colors duration-300"
             >
               {isOpen ? (
                 <FiX className="h-8 w-8" />
@@ -179,9 +183,9 @@ export default function Nav() {
         </div>
       </div>
 
-      {/* Mobile Navigation - Smooth opening */}
+      {/* Mobile Navigation */}
       <div
-        className={`md:hidden bg-black/95 overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-screen' : 'max-h-0'}`}
+        className={`md:hidden bg-customblue/30 backdrop-blur-sm overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-screen' : 'max-h-0'}`}
       >
         <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
           <MobileNavLink
@@ -281,7 +285,7 @@ function NavLink({ to, label, isActive }) {
   return (
     <Link
       to={to}
-      className={`relative text-gray-300 hover:text-white px-4 py-2 text-sm font-medium transition-colors duration-300 ${isActive ? 'text-pink-600' : ''}`}
+      className={`relative text-white drop-shadow-md hover:text-white px-4 py-2 text-sm font-medium transition-colors duration-300 ${isActive ? 'text-pink-600' : ''}`}
     >
       {label}
       <span
@@ -296,7 +300,7 @@ function MobileNavLink({ to, label, isActive, onClick }) {
     <Link
       to={to}
       onClick={onClick}
-      className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-300 ${isActive ? 'text-pink-600' : 'text-gray-300 hover:text-white'}`}
+      className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-300 ${isActive ? 'text-pink-600' : 'text-white hover:text-white'}`}
     >
       {label}
     </Link>
@@ -317,7 +321,7 @@ function Dropdown({
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
         onClick={onClick}
-        className={`text-gray-300 hover:text-white px-4 py-2 text-sm font-medium flex items-center transition-colors duration-300 ${isActive ? 'text-pink-600' : ''}`}
+        className={`text-white drop-shadow-md hover:text-white px-4 py-2 text-sm font-medium flex items-center transition-colors duration-300 ${isActive ? 'text-pink-600' : ''}`}
       >
         {label}
         <svg
@@ -340,7 +344,7 @@ function Dropdown({
 
       {isActive && (
         <div
-          className="origin-top-right absolute left-0 mt-0 w-48 rounded-none shadow-lg bg-black ring-1 ring-gray-800"
+          className="origin-top-right absolute left-0 mt-0 w-48 rounded-none shadow-lg bg-black/90 backdrop-blur-sm ring-1 ring-gray-800"
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
         >
@@ -378,7 +382,7 @@ function MobileDropdown({ label, items, isOpen, onClick, onClose }) {
     <div className="space-y-1">
       <button
         onClick={onClick}
-        className="w-full text-left text-gray-300 hover:text-white px-3 py-2 rounded-md text-base font-medium flex items-center justify-between transition-colors duration-300"
+        className="w-full text-left text-white hover:text-white px-3 py-2 rounded-md text-base font-medium flex items-center justify-between transition-colors duration-300"
       >
         {label}
         <svg
@@ -405,7 +409,7 @@ function MobileDropdown({ label, items, isOpen, onClick, onClose }) {
                     key={subItem.name}
                     to={subItem.to}
                     onClick={onClose}
-                    className="block text-gray-400 hover:text-white hover:bg-pink-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300"
+                    className="block text-white hover:text-white hover:bg-pink-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300"
                   >
                     {subItem.name}
                   </Link>
@@ -415,7 +419,7 @@ function MobileDropdown({ label, items, isOpen, onClick, onClose }) {
                     key={item.name}
                     to={item.to}
                     onClick={onClose}
-                    className="block text-gray-400 hover:text-white hover:bg-pink-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300"
+                    className="block text-white hover:text-white hover:bg-pink-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300"
                   >
                     {item.name}
                   </Link>,

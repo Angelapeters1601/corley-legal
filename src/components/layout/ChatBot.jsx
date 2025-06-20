@@ -19,13 +19,19 @@ export default function ChatBot({ onClose }) {
   const messagesEndRef = useRef(null);
 
   // Session ID management
+
   useEffect(() => {
     const existingId = localStorage.getItem(SESSION_KEY) || uuidv4();
     localStorage.setItem(SESSION_KEY, existingId);
     setSessionId(existingId);
   }, []);
 
-  // Realtime subscription
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem(`${SESSION_KEY}_messages`, JSON.stringify(messages));
+    }
+  }, [messages]);
+
   useEffect(() => {
     if (!sessionId) return;
 
@@ -71,7 +77,6 @@ export default function ChatBot({ onClose }) {
     };
   }, [sessionId]);
 
-  // Load messages
   useEffect(() => {
     const loadMessages = async () => {
       const { data } = await supabase
@@ -80,7 +85,7 @@ export default function ChatBot({ onClose }) {
         .eq('session_id', sessionId)
         .order('timestamp', { ascending: true });
 
-      if (data) {
+      if (data && data.length > 0) {
         setMessages(
           data.map((msg) => ({
             sender: msg.sender,
@@ -89,7 +94,14 @@ export default function ChatBot({ onClose }) {
           }))
         );
       } else {
-        // Initial bot message
+        // 🟡 Try restoring from localStorage
+        const saved = localStorage.getItem(`${SESSION_KEY}_messages`);
+        if (saved) {
+          setMessages(JSON.parse(saved));
+          return;
+        }
+
+        // 🟢 If nothing saved, show welcome message
         const welcome = {
           sender: 'bot',
           text: 'Hello! 👋 Welcome to Corley Integrated Paralegals Services. How can I help you today?',
@@ -113,7 +125,6 @@ export default function ChatBot({ onClose }) {
     if (sessionId) loadMessages();
   }, [sessionId]);
 
-  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -125,11 +136,8 @@ export default function ChatBot({ onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Don't proceed if empty input or if transferring but not in contact info phase
     if (!input.trim() || (isTransferring && !awaitingContact)) return;
 
-    // Create message object for database
     const dbMessage = {
       session_id: sessionId,
       sender: 'user',
@@ -137,24 +145,17 @@ export default function ChatBot({ onClose }) {
       timestamp: new Date().toISOString(),
     };
 
-    // Create message object for UI
     const uiMessage = {
       sender: 'user',
       text: input.trim(),
       timestamp: new Date(),
     };
 
-    // Special handling for contact information submission
     if (awaitingContact) {
       try {
-        // Update both chat_sessions and chat_metadata in a transaction
-        const { error } = await supabase
-          .from('chat_sessions')
-          .insert([dbMessage]);
+        await supabase.from('chat_sessions').insert([dbMessage]);
 
-        if (error) throw error;
-
-        const { error: metadataError } = await supabase
+        await supabase
           .from('chat_metadata')
           .update({
             contact_info: input.trim(),
@@ -163,14 +164,10 @@ export default function ChatBot({ onClose }) {
           })
           .eq('session_id', sessionId);
 
-        if (metadataError) throw metadataError;
-
-        // Update UI
         setMessages((prev) => [...prev, uiMessage]);
         setInput('');
         setAwaitingContact(false);
 
-        // Add confirmation message
         setMessages((prev) => [
           ...prev,
           {
@@ -180,6 +177,11 @@ export default function ChatBot({ onClose }) {
           },
         ]);
 
+        await supabase
+          .from('chat_metadata')
+          .update({ transferred: true })
+          .eq('session_id', sessionId);
+
         return;
       } catch (error) {
         console.error('Error submitting contact info:', error);
@@ -187,40 +189,39 @@ export default function ChatBot({ onClose }) {
       }
     }
 
-    // Normal message handling
-    setMessages((prev) => [...prev, uiMessage]);
+    setMessages((prev) =>
+      [...prev, uiMessage].sort((a, b) => a.timestamp - b.timestamp)
+    );
     await supabase.from('chat_sessions').insert([dbMessage]);
     setInput('');
-    setIsTyping(true);
 
-    // Bot reply after delay
-    setTimeout(async () => {
-      if (isTransferring) {
+    if (!isTransferring) {
+      setIsTyping(true);
+      setTimeout(async () => {
+        const botReply = {
+          ...generateBotReply(input.trim()),
+          timestamp: new Date(),
+        };
+
+        try {
+          await supabase.from('chat_sessions').insert([
+            {
+              session_id: sessionId,
+              sender: 'bot',
+              text: botReply.text,
+              timestamp: botReply.timestamp.toISOString(),
+            },
+          ]);
+          setMessages((prev) =>
+            [...prev, botReply].sort((a, b) => a.timestamp - b.timestamp)
+          );
+        } catch (error) {
+          console.error('Bot reply failed:', error);
+        }
+
         setIsTyping(false);
-        return;
-      }
-
-      const botReply = {
-        ...generateBotReply(input.trim()),
-        timestamp: new Date(),
-      };
-
-      try {
-        await supabase.from('chat_sessions').insert([
-          {
-            session_id: sessionId,
-            sender: 'bot',
-            text: botReply.text,
-            timestamp: new Date().toISOString(),
-          },
-        ]);
-        setMessages((prev) => [...prev, botReply]);
-      } catch (error) {
-        console.error('Bot reply failed:', error);
-      }
-
-      setIsTyping(false);
-    }, 1000);
+      }, 1000);
+    }
   };
 
   const generateBotReply = (inputText) => {

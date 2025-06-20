@@ -20,6 +20,7 @@ import Resources from './pages/Resources';
 import Contact from './pages/Contact';
 import Login from './pages/Login';
 import Dashboard from './admin/Dashboard';
+import AdminLogin from './admin/AdminLogin';
 import FormSubmissions from './admin/FormSubmissions';
 import LegalBriefings from './admin/LegalBriefings';
 import LiveChat from './admin/LiveChat';
@@ -47,8 +48,8 @@ export default function App() {
     <div className="min-h-screen flex flex-col">
       <Toaster position="top-right" />
       {/* <Router basename="/"> for deployment*/}
-      <Router basename="/corley-legal">
-        {/* <Router basename="/"> */}
+      {/* <Router basename="/corley-legal"> */}
+      <Router basename="/">
         {/* <Router basename="/corley-legal"> //production only */}
         <ScrollToTop />
         <Routes>
@@ -60,11 +61,13 @@ export default function App() {
             <Route path="/resources" element={<Resources />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/login" element={<Login />} />
+
+            {/* ********************************admin***************************** */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+
             <Route element={<ProtectedRoute />}>
-              <Route
-                path="/admin"
-                element={user ? <Dashboard /> : <Navigate to="/login" />}
-              />
+              <Route path="/admin" element={<Dashboard />} />
+              <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin/forms" element={<FormSubmissions />} />
               <Route path="/admin/visitors" element={<VisitorDashboard />} />
               <Route path="/admin/orders" element={<Orders />} />

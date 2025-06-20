@@ -36,7 +36,7 @@ const HeroSlides = () => {
   }, [images]);
 
   return (
-    <div className="relative w-full h-screen overflow-hidden">
+    <div className="relative w-full h-[75vh] overflow-hidden">
       {/* Background Images with Smooth Transition */}
       <div className="relative w-full h-full">
         {images.map((img, index) => (

@@ -5,21 +5,35 @@ import Loader from '../Ui/Loader';
 
 export default function ProtectedRoute() {
   const [loading, setLoading] = useState(true);
-  const [session, setSession] = useState(null);
+  const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+    const checkSession = async () => {
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
+
+      if (error || !session) {
+        navigate('/admin/login');
+        return;
+      }
+
+      setUser(session.user);
       setLoading(false);
-      if (!session) navigate('/admin/login');
-    });
+    };
+
+    checkSession();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (!session) navigate('/admin/login');
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!session) {
+        navigate('/admin/login');
+      } else {
+        setUser(session.user);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -27,5 +41,5 @@ export default function ProtectedRoute() {
 
   if (loading) return <Loader />;
 
-  return session ? <Outlet /> : null;
+  return <Outlet context={{ user }} />;
 }

@@ -12,7 +12,7 @@ function AppLayout() {
   return (
     <div className="min-h-screen flex flex-col relative">
       <Nav />
-      <main className="flex-grow">
+      <main className="flex-grow ">
         <Outlet />
       </main>
       <Footer />
